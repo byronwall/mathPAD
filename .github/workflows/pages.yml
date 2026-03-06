@@ -37,8 +37,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Set base path
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          if [ "$REPO_NAME" = "${GITHUB_REPOSITORY_OWNER}.github.io" ]; then
+            echo "VITE_BASE_PATH=/" >> "$GITHUB_ENV"
+          else
+            echo "VITE_BASE_PATH=/$REPO_NAME/" >> "$GITHUB_ENV"
+          fi
+
       - name: Build
-        run: pnpm build -- --base=/${{ github.event.repository.name }}/
+        run: pnpm build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
