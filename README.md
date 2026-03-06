@@ -1,8 +1,23 @@
-# mathPAD
-Web based full page calculator similar to MathCad
+# mathPAD (SolidJS SPA)
 
-The original idea was to create a single page web based version of something similar to MathCad.  This was to support using the application in an environment where running a web server was not possible.  The initial commit is the bare file that was created.
+This repo modernizes the original single-file `mathpad.html` into a SolidJS single page app using a stock Vite + Solid setup and `pnpm` tooling.
 
-This application was originally run on a web server where the units were held in a database.
+## What Was Migrated
 
-The goal is to get this developed into a legitimate application again.  It needs some cleanup on all the different files that have been included.  That will be the starting point.
+- Worksheet row model (`assign`, `expression`, `output units`) with top-to-bottom evaluation
+- Variable assignment and custom function assignment (`f(x) = ...` style)
+- Expression parsing with `+ - * / ^`, parentheses, and implicit multiplication
+- Unit-aware arithmetic and conversion output fields
+- Built-in math functions (`sin`, `cos`, `sqrt`, `log`, etc.) with unit safety checks
+
+## Project Scripts
+
+- `pnpm dev` - Start local dev server
+- `pnpm codex:play` - Run app on `http://127.0.0.1:4173` for Codex/browser play
+- `pnpm build` - Type-check and build for production
+- `pnpm preview` - Preview production build
+
+## Notes
+
+- Legacy file `mathpad.html` is retained as the original reference implementation.
+- Main evaluation logic now lives in `src/lib/mathEngine.ts`.
