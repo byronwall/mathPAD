@@ -35,6 +35,7 @@ type FunctionDef = {
 type EvalContext = {
   vars: Map<string, Quantity>;
   funcs: Map<string, FunctionDef>;
+  invalid: Set<string>;
 };
 
 type UnitDef = {
@@ -61,6 +62,7 @@ const NON_SI_UNITS: UnitDef[] = [
   { name: 'mile', symbol: 'mi', factor: 1609.344, result: { m: 1 } },
   { name: 'liter', symbol: 'L', factor: 0.001, result: { m: 3 } },
   { name: 'kilometer', symbol: 'km', factor: 1000, result: { m: 1 } },
+  { name: 'centimeter', symbol: 'cm', factor: 0.01, result: { m: 1 } },
   { name: 'bar', symbol: 'bar', factor: 100000, result: { Pa: 1 } },
   { name: 'standard atmosphere', symbol: 'atm', factor: 101325, result: { Pa: 1 } },
   { name: 'kilopascal', symbol: 'kPa', factor: 1000, result: { Pa: 1 } },
@@ -422,6 +424,9 @@ function evaluate(node: ExprNode, ctx: EvalContext, locals?: Map<string, Quantit
       if (local) {
         return quantity(local.value, local.units);
       }
+      if (ctx.invalid.has(node.name)) {
+        throw new Error(`Assignment "${node.name}" is invalid`);
+      }
       const variable = ctx.vars.get(node.name);
       if (variable) {
         return quantity(variable.value, variable.units);
@@ -454,6 +459,9 @@ function evaluate(node: ExprNode, ctx: EvalContext, locals?: Map<string, Quantit
     }
     case 'call': {
       const args = node.args.map((a) => evaluate(a, ctx, locals));
+      if (ctx.invalid.has(node.name)) {
+        throw new Error(`Assignment "${node.name}" is invalid`);
+      }
       const func = ctx.funcs.get(node.name);
       if (!func) {
         return evalBuiltin(node.name, args);
@@ -521,7 +529,8 @@ function parseExpr(text: string): ExprNode {
 export function evaluateWorksheet(rows: WorksheetRow[]): RowEvaluation[] {
   const ctx: EvalContext = {
     vars: new Map<string, Quantity>(),
-    funcs: new Map<string, FunctionDef>()
+    funcs: new Map<string, FunctionDef>(),
+    invalid: new Set<string>()
   };
 
   return rows.map((row) => {
@@ -530,33 +539,44 @@ export function evaluateWorksheet(rows: WorksheetRow[]): RowEvaluation[] {
       return { ok: true, valueText: '' };
     }
 
+    let assignment: ReturnType<typeof parseAssign> = { kind: 'none' };
     try {
-      const assignment = parseAssign(row.assign);
+      assignment = parseAssign(row.assign);
       const exprAst = parseExpr(expression);
       if (assignment.kind === 'func') {
         ctx.funcs.set(assignment.name, {
           params: assignment.params,
           body: exprAst
         });
+        ctx.invalid.delete(assignment.name);
         return { ok: true, valueText: '' };
       }
 
       const value = evaluate(exprAst, ctx);
 
-      if (assignment.kind === 'var') {
-        ctx.vars.set(assignment.name, value);
-      }
-
       let shown = value;
       const outUnits = row.outUnits.trim();
       if (outUnits) {
         const outAst = parseExpr(outUnits);
-        const desired = evaluate(outAst, ctx);
+        const desired = evaluate(outAst, { vars: new Map(), funcs: new Map(), invalid: new Set() });
+        if (!sameUnits(value.units, desired.units)) {
+          throw new Error('Output units must match the result');
+        }
         shown = quantity(value.value / desired.value, combineUnits(value.units, desired.units, -1));
+      }
+
+      if (assignment.kind === 'var') {
+        ctx.vars.set(assignment.name, value);
+        ctx.invalid.delete(assignment.name);
       }
 
       return { ok: true, valueText: formatQuantity(shown) };
     } catch (err) {
+      if (assignment.kind !== 'none') {
+        ctx.vars.delete(assignment.name);
+        ctx.funcs.delete(assignment.name);
+        ctx.invalid.add(assignment.name);
+      }
       const message = err instanceof Error ? err.message : 'Evaluation failed';
       return { ok: false, valueText: '', error: message };
     }

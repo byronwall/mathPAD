@@ -188,7 +188,7 @@ export default function App() {
       exprVisible: true,
       showResult: true,
       outUnitsVisible: true,
-      outUnits: 'kPa'
+      outUnits: 'N'
     })
   ]);
 
