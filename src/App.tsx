@@ -1,6 +1,7 @@
 import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { PREDEFINED_UNITS, evaluateWorksheet, type WorksheetRow } from './lib/mathEngine';
+import { placeExampleRows } from './lib/examplePosition';
 
 type FocusField = 'assign' | 'expr' | 'outUnits';
 
@@ -181,6 +182,7 @@ function fromFlatText(text: string): CanvasRow[] {
 }
 
 export default function App() {
+  let topbar: HTMLElement | undefined;
   const [rows, setRows] = createStore<CanvasRow[]>([
     makeRow(110, 150, {
       assign: 'F',
@@ -322,7 +324,9 @@ export default function App() {
       return;
     }
 
-    setRows(fromPartialRows(example.rows));
+    const loaded = fromPartialRows(example.rows);
+    const visibleTop = (topbar?.getBoundingClientRect().bottom ?? 0) + window.scrollY + 12;
+    setRows(placeExampleRows(loaded, visibleTop, window.innerWidth));
   };
 
   const openFlatModal = () => {
@@ -463,7 +467,7 @@ export default function App() {
   return (
     <main class="workspace" onClick={workspaceClick}>
       <Show when={!headerCollapsed()} fallback={<button class="header-collapsed" onClick={() => setHeaderCollapsed(false)}>Open mathPAD</button>}>
-        <header class="topbar">
+        <header class="topbar" ref={topbar}>
           <div class="topbar-head">
             <h1>mathPAD</h1>
             <button class="ghost" onClick={() => setHeaderCollapsed(true)}>Collapse</button>

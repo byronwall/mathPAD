@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "tsc src/lib/mathEngine.ts --target es2020 --module es2020 --skipLibCheck --outDir .test-build && node --test tests/*.test.mjs",
+    "test": "tsc src/lib/mathEngine.ts src/lib/examplePosition.ts --target es2020 --module es2020 --skipLibCheck --outDir .test-build && node --test tests/*.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
