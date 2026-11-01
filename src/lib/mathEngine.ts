@@ -536,6 +536,16 @@ export function evaluateWorksheet(rows: WorksheetRow[]): RowEvaluation[] {
   return rows.map((row) => {
     const expression = row.expr.trim();
     if (!expression) {
+      try {
+        const assignment = parseAssign(row.assign);
+        if (assignment.kind !== 'none') {
+          ctx.vars.delete(assignment.name);
+          ctx.funcs.delete(assignment.name);
+          ctx.invalid.add(assignment.name);
+        }
+      } catch {
+        // Empty rows do not evaluate until an expression is supplied.
+      }
       return { ok: true, valueText: '' };
     }
 

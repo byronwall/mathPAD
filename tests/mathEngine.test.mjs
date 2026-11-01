@@ -18,6 +18,10 @@ test('failed assignments cannot fall back to a unit or an older value', () => {
   ]);
   assert.equal(results[1].ok, false);
   assert.match(results[2].error, /Assignment "A" is invalid/);
+  const cleared = evaluateWorksheet([
+    row('A', '5m^2'), row('A', ''), row('', '12000N/A', 'MPa')
+  ]);
+  assert.match(cleared[2].error, /Assignment "A" is invalid/);
 });
 
 test('output conversions check dimensions and ignore worksheet variable names', () => {
