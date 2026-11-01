@@ -13,6 +13,7 @@ type CanvasRow = WorksheetRow & {
   exprVisible: boolean;
   outUnitsVisible: boolean;
   showResult: boolean;
+  exampleNarrow?: boolean;
 };
 
 type SavedSheet = {
@@ -146,7 +147,8 @@ function normalizeLoadedRow(row: Partial<CanvasRow>, index: number): CanvasRow {
     assignVisible: row.assignVisible ?? (assign !== '' || expr === ''),
     exprVisible: row.exprVisible ?? expr !== '',
     outUnitsVisible: row.outUnitsVisible ?? outUnits !== '',
-    showResult: row.showResult ?? expr !== ''
+    showResult: row.showResult ?? expr !== '',
+    exampleNarrow: row.exampleNarrow
   });
 }
 
@@ -326,7 +328,9 @@ export default function App() {
 
     const loaded = fromPartialRows(example.rows);
     const visibleTop = (topbar?.getBoundingClientRect().bottom ?? 0) + window.scrollY + 12;
-    setRows(placeExampleRows(loaded, visibleTop, window.innerWidth));
+    setRows(placeExampleRows(loaded, visibleTop, window.innerWidth).map((row) => ({
+      ...row, exampleNarrow: window.innerWidth <= 600
+    })));
   };
 
   const openFlatModal = () => {
@@ -507,7 +511,7 @@ export default function App() {
         {(row) => {
           const result = () => resultById().get(row.id);
           return (
-            <div class="calc-row" style={{ left: `${row.x}px`, top: `${row.y}px` }} onClick={(e) => e.stopPropagation()}>
+            <div class="calc-row" classList={{ 'example-narrow': row.exampleNarrow }} style={{ left: `${row.x}px`, top: `${row.y}px` }} onClick={(e) => e.stopPropagation()}>
               <button type="button" class="drag-handle" title="Drag row" onPointerDown={(e) => startDrag(e, row)}>::</button>
 
               <Show when={row.assignVisible}>

@@ -310,3 +310,10 @@ button.ghost {
     font-size: 14px;
   }
 }
+
+@media (max-width: 600px) {
+  .calc-row.example-narrow {
+    max-width: calc(100vw - 24px);
+    flex-wrap: wrap;
+  }
+}

@@ -3,9 +3,10 @@ export function placeExampleRows<T extends { x: number; y: number }>(
 ): T[] {
   if (!rows.length) return rows;
   const shift = Math.max(0, visibleTop - Math.min(...rows.map((row) => row.y)));
-  return rows.map((row) => ({
+  const firstY = Math.min(...rows.map((row) => row.y));
+  return rows.map((row, index) => ({
     ...row,
     x: viewportWidth <= 600 ? 12 : row.x,
-    y: row.y + shift
+    y: viewportWidth <= 600 ? firstY + shift + index * 88 : row.y + shift
   }));
 }
